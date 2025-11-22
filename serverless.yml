@@ -1,0 +1,66 @@
+org: lucianayc
+service: products-admin-api
+
+custom:
+  pythonRequirements:
+    pythonBin: python3
+
+provider:
+  name: aws
+  runtime: python3.12
+  timeout: 30
+  memorySize: 256
+  region: us-east-1
+  stage: dev
+  iam:
+    role: arn:aws:iam::131515946730:role/LabRole
+  environment:
+    PRODUCTOS_TABLE: ProductosTable
+    # Nombre exacto de la lambda del otro servicio
+    AUTH_LAMBDA_NAME: auth-microservice-dev-validateToken 
+
+functions:
+  createProduct:
+    handler: handlers.create_product
+    events:
+      - http:
+          path: admin/productos
+          method: post
+          cors: true
+
+  updateProduct:
+    handler: handlers.update_product
+    events:
+      - http:
+          path: admin/productos/{id}
+          method: patch
+          cors: true
+
+  deleteProduct:
+    handler: handlers.delete_product
+    events:
+      - http:
+          path: admin/productos/{id}
+          method: delete
+          cors: true
+
+resources:
+  Resources:
+    ProductosTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ProductosTable
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: tenant_id
+            AttributeType: S
+          - AttributeName: producto_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: tenant_id
+            KeyType: HASH
+          - AttributeName: producto_id
+            KeyType: RANGE
+
+plugins:
+  - serverless-python-requirements
